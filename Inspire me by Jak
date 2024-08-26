@@ -1,80 +1,75 @@
-import tkinter as tk
-from tkinter import messagebox
-import requests
-import random
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
+import tkinter as tk  # Imports the tkinter library, which is used for creating the graphical user interface (GUI).
+from tkinter import messagebox  # Imports the messagebox module from tkinter for displaying messages.
+import requests  # Imports the requests library to make HTTP requests to fetch quotes.
+import random  # Imports the random library for random selections.
+from concurrent.futures import ThreadPoolExecutor, as_completed  # Imports classes to handle concurrent execution.
 
 # Function to fetch a single random quote from the API
 def fetch_single_quote():
-    api_url = "https://quotes-api-self.vercel.app/quote"
-
+    api_url = "https://quotes-api-self.vercel.app/quote"  # URL of the API that returns a random quote.
 
     try:
-        response = requests.get(api_url)
-        response.raise_for_status()  # Raises an error for bad status codes
-        return response.json()
+        response = requests.get(api_url)  # Sends a GET request to the API.
+        response.raise_for_status()  # Checks for HTTP errors and raises an exception if any.
+        return response.json()  # Converts the JSON response to a Python dictionary.
 
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching quote: {e}")
-        return None
+        print(f"Error fetching quote: {e}")  # Prints an error message if the request fails.
+        return None  # Returns None if an error occurs.
 
-
-# Function to fetch multiple quotes at the same time...
+# Function to fetch multiple quotes concurrently
 def fetch_multiple_quotes_concurrently(num_quotes=20):
-    quotes = []
+    quotes = []  # Initializes an empty list to store the fetched quotes.
 
     # Using ThreadPoolExecutor to fetch quotes concurrently
-    with ThreadPoolExecutor(max_workers=num_quotes) as executor:
-        futures = [executor.submit(fetch_single_quote) for _ in range(num_quotes)]
+    with ThreadPoolExecutor(max_workers=num_quotes) as executor:  # Creates a thread pool with a number of workers.
+        futures = [executor.submit(fetch_single_quote) for _ in range(num_quotes)]  # Submits multiple tasks to fetch quotes.
 
-        for future in as_completed(futures):
-            quote_data = future.result()
-            if quote_data:
-                quotes.append(quote_data)
+        for future in as_completed(futures):  # Processes each completed future as it finishes.
+            quote_data = future.result()  # Gets the result of the future (a quote).
+            if quote_data:  # If a valid quote is received:
+                quotes.append(quote_data)  # Adds the quote to the list.
 
-    return quotes
+    return quotes  # Returns the list of quotes.
 
-
-# Function to match the quote word or keywords with the user input, and fallback
+# Function to match the quote or keywords with the user input, with a fallback option
 def find_matching_quote(quotes, mood):
-    mood_lower = mood.lower()
-    for quote_data in quotes:
-        quote = quote_data['quote'].lower()
-        if mood_lower in quote:
-            return f"{quote_data['quote']} - {quote_data['author']}"
+    mood_lower = mood.lower()  # Converts the user's mood input to lowercase for case-insensitive matching.
+    for quote_data in quotes:  # Iterates through each fetched quote.
+        quote = quote_data['quote'].lower()  # Converts the quote text to lowercase.
+        if mood_lower in quote:  # Checks if the mood keyword is in the quote.
+            return f"{quote_data['quote']} - {quote_data['author']}"  # Returns the matching quote with the author.
 
     # Fallback if no matching quote is found
-    fallback_quote = random.choice(quotes)
+    fallback_quote = random.choice(quotes)  # Randomly selects a quote if no match is found.
     return (f"Perhaps, I have something here that might inspire you:"
-            f"\n\n{fallback_quote['quote']} - {fallback_quote['author']}")
+            f"\n\n{fallback_quote['quote']} - {fallback_quote['author']}")  # Returns a fallback quote with a message.
 
-
-# Function for the button in graphical user interface(GUI)
+# Function for the button in the graphical user interface (GUI)
 def get_quote():
-    mood = mood_entry.get()
-    quotes = fetch_multiple_quotes_concurrently(num_quotes=20)
-    quote = find_matching_quote(quotes, mood)
-    result_label.config(text=quote)
+    mood = mood_entry.get()  # Gets the mood input from the user.
+    quotes = fetch_multiple_quotes_concurrently(num_quotes=20)  # Fetches multiple quotes concurrently.
+    quote = find_matching_quote(quotes, mood)  # Finds a matching quote based on the user's mood.
+    result_label.config(text=quote)  # Displays the resulting quote in the label.
 
+# Setting up the GUI
+root = tk.Tk()  # Creates the main window for the GUI.
+root.title("Inspire me - Made by Jahan")  # Sets the title of the window.
 
-# How the GUI works
-root = tk.Tk()
-root.title("Inspire me - Made by Jahan")
+# Label for the mood input field
+mood_label = tk.Label(root, text="How do you feel today?")  # Creates a label asking the user how they feel.
+mood_label.pack(pady=10)  # Adds the label to the window with padding.
 
-# Name for the mood and input
-mood_label = tk.Label(root, text="How do you feel today?")
-mood_label.pack(pady=10)
-mood_entry = tk.Entry(root, width=50)
-mood_entry.pack(pady=10)
+mood_entry = tk.Entry(root, width=50)  # Creates an entry field for the user to input their mood.
+mood_entry.pack(pady=10)  # Adds the entry field to the window with padding.
 
-# Button for getting the quote
-get_quote_button = tk.Button(root, text="Get Quote", command=get_quote)
-get_quote_button.pack(pady=20)
+# Button to trigger the quote generation
+get_quote_button = tk.Button(root, text="Get Quote", command=get_quote)  # Creates a button that calls the get_quote function.
+get_quote_button.pack(pady=20)  # Adds the button to the window with padding.
 
-# Label for delivering the quote for the user
-result_label = tk.Label(root, text="", wraplength=400, justify="center")
-result_label.pack(pady=20)
+# Label for displaying the quote to the user
+result_label = tk.Label(root, text="", wraplength=400, justify="center")  # Creates a label to display the quote.
+result_label.pack(pady=20)  # Adds the label to the window with padding.
 
-# To run the program
-root.mainloop()
+# Runs the GUI application
+root.mainloop()  # Starts the main loop that keeps the window open and responsive.
